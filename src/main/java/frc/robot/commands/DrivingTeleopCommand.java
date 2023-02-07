@@ -24,6 +24,13 @@ public class DrivingTeleopCommand extends CommandBase {
     @Override
     public void execute() {
         // Called every 20 ms
-        DriverStation.reportWarning(String.valueOf(accelerometerSubsystem.accelerometer.getX()), false);
+/*        DriverStation.reportWarning(String.valueOf(
+                //accelerometerSubsystem.accelerometer.getX()) + " " +
+                //accelerometerSubsystem.accelerometer.getY() + " " +
+                accelerometerSubsystem.accelerometer.getZ()), false);*/
+        DriverStation.reportWarning(String.valueOf(
+                //accelerometerSubsystem.accelerometer.getX()) + " " +
+                //accelerometerSubsystem.accelerometer.getY() + " " +
+                accelerometerSubsystem.gyroScope.getRate()), false);
     }
 }
