@@ -15,6 +15,6 @@ public class AccelerometerSubsystem extends SubsystemBase {
     public AccelerometerSubsystem() {
         accelerometer = new BuiltInAccelerometer();
         gyroScope = new AnalogGyro(I2C.Port.kMXP.value);
-    }
+    } //who's joe?         Joe mama hahaha from vincent :)  (this joke will never get old)
 
 }
