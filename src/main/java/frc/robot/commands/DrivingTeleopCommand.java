@@ -40,7 +40,7 @@ public class DrivingTeleopCommand extends CommandBase {
         if(currentMode == RampBalancingDir.FORWARDS) {
             // Do this...
             if (angle > 10 && angle < 14.5) {
-                // We're climbing up the first ramp
+                // We're climbing up the first section of the ramp
                 drivingSubsystem.drive(0, startingPower);
             } else if(angle <= 10 && rate < 15 ) {
                 startingPower = 0; // Can we turn to lock ourselves in place?
@@ -51,7 +51,16 @@ public class DrivingTeleopCommand extends CommandBase {
             // At the end of the phase, if we're falling, change mode to backwards
             currentMode = RampBalancingDir.BACKWARDS;
         } else if(currentMode == RampBalancingDir.BACKWARDS) {
-            // Same as above
+            if (angle > -14.5 && angle < -10) {
+                // We're going up the left side of the ramp
+                drivingSubsystem.drive(0, startingPower);
+            } else if(angle >= -10 && rate > -15) {
+                startingPower = 0;
+            } else if (angle <= -14.5) {
+                // Going up main ramp on the left side
+                drivingSubsystem.drive(0, startingPower);
+            }
+
             drivingSubsystem.drive(0, -1);
             currentMode = RampBalancingDir.FORWARDS;
         }
