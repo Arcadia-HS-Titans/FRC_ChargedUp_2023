@@ -12,9 +12,21 @@ public class FileManager {
 
     public static void writeFile(File fileName, String toWrite) {
         try {
-            fileName.mkdirs();
             fileName.createNewFile();
             FileWriter fileWriter = new FileWriter(fileName);
+            for(int i = 0; i < toWrite.length(); i++) {
+                fileWriter.write(toWrite.charAt(i));
+            }
+            fileWriter.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void appendFile(File fileName, String toWrite) {
+        try {
+            fileName.createNewFile();
+            FileWriter fileWriter = new FileWriter(fileName, true);
             for(int i = 0; i < toWrite.length(); i++) {
                 fileWriter.write(toWrite.charAt(i));
             }

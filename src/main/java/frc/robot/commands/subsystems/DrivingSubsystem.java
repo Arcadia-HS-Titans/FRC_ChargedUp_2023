@@ -3,21 +3,29 @@ package frc.robot.commands.subsystems;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.PWMTalonSRX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class DrivingSubsystem extends SubsystemBase {
-    private MotorController motorControllerBL = new PWMTalonSRX(0);
-    private MotorController motorControllerFL = new PWMTalonSRX(1);
-    private MotorController motorControllerBR = new PWMTalonSRX(2);
-    private MotorController motorControllerFR = new PWMTalonSRX(3);
-    private MotorControllerGroup leftGroup = new MotorControllerGroup(motorControllerBL, motorControllerFL);
-    private MotorControllerGroup rightGroup = new MotorControllerGroup(motorControllerFR, motorControllerBR);
-    private DifferentialDrive drive = new DifferentialDrive(leftGroup, rightGroup);
+    // Left motors
+    private final PWMSparkMax GREEN_MOTOR = new PWMSparkMax(Constants.GREEN_MOTOR_PORT);
+    private final PWMSparkMax YELLOW_MOTOR = new PWMSparkMax(Constants.YELLOW_MOTOR_PORT);
+    MotorController rightController = new MotorControllerGroup(GREEN_MOTOR, YELLOW_MOTOR);
+    //Right motors
+    private final PWMSparkMax RED_MOTOR = new PWMSparkMax(Constants.RED_MOTOR_PORT);
+    private final PWMSparkMax ORANGE_MOTOR = new PWMSparkMax(Constants.ORANGE_MOTOR_PORT);
+    MotorController leftController = new MotorControllerGroup(RED_MOTOR, ORANGE_MOTOR);
 
-    public DrivingSubsystem() {}
+    // Differential drive to control the robot
+    private final DifferentialDrive robotDrive = new DifferentialDrive(leftController, rightController);
 
-    public void drive(double xAxis, double yAxis) {
-        drive.arcadeDrive(xAxis, yAxis);
+    // Reference for encoders later https://github.com/wpilibsuite/allwpilib/blob/main/wpilibjExamples/src/main/java/edu/wpi/first/wpilibj/examples/hatchbottraditional/subsystems/DriveSubsystem.java
+    public DrivingSubsystem() {
+    }
+
+    public void arcadeDrive(double forward, double rotation) {
+        robotDrive.arcadeDrive(forward, rotation);
     }
 }
