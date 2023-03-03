@@ -1,16 +1,16 @@
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.FileManager;
+import frc.robot.utils.FileManager;
 import frc.robot.commands.subsystems.AccelerometerSubsystem;
 import frc.robot.commands.subsystems.DoubleSolonoidSubsystem;
 import frc.robot.commands.subsystems.DrivingSubsystem;
+import frc.robot.utils.SimpleTimer;
+import frc.robot.utils.Vector3;
 
 import java.io.File;
-import java.util.Random;
 
 /**
  * https://docs.wpilib.org/en/stable/docs/software/commandbased/commands.html#simple-command-example
@@ -18,75 +18,63 @@ import java.util.Random;
  */
 public class DrivingTeleopCommand extends CommandBase {
 
-    public enum RampBalancingDir {
+    public enum RampPhase {
         NONE,
-        FORWARDS,
-        BACKWARDS
+        STARTING,
+        GETTING_ON_FIRST_RAMP,
+        ON_FIRST_RAMP,
+        BALANCING,
+        FALLING
     }
 
-    public boolean isInRange(double angle, double range) {
-        return Math.abs(angle) < Math.abs(range);
-    }
-    public boolean isOutOfRage(double angle, double range) {
-        return Math.abs(angle) > Math.abs(range);
-    }
-
-    public boolean isInRange(double lower, double angle, double higher) {
-        higher = Math.abs(higher);
-        lower = Math.abs(lower);
-        angle = Math.abs(angle);
-        return (angle > lower && angle < higher);
-    }
-    public boolean isOutRange(double lower, double angle, double higher) {
-        higher = Math.abs(higher);
-        lower = Math.abs(lower);
-        angle = Math.abs(angle);
-        return (angle < lower || angle > higher);
-    }
-    private RampBalancingDir currentMode = RampBalancingDir.NONE;
-    private double startingPower = .8;
     private boolean pressedRamps = false;
     private boolean toggleRamps = false;
+    private SimpleTimer approachRamp = new SimpleTimer(25, SimpleTimer.Behavior.ONCE); // 500 ms
+    private RampPhase currentPhase = RampPhase.NONE;
+    private Vector3 recordedAcceleration = null;
 
     public void balanceOnRamp() {
-        // TODO: Have the accelerometer auto-adjust the bot to face ramp, maybe error correcting later
         double angle = accelerometerSubsystem.gyroScope.getAngle();
         double rate = accelerometerSubsystem.gyroScope.getRate();
+        if(currentPhase == RampPhase.STARTING) {
+            // TODO: Have the accelerometer auto-adjust the bot to face ramp, maybe error correcting later
+            // This will be later and before this
+            boolean autoAdjusting = false;
+            if(autoAdjusting) {}
+            // End auto adjusting and start climbing
 
-        // TODO: Check absolute part
-/*        if((angle > 10 || angle < 10) && currentMode == RampBalancingDir.NONE) {
-            currentMode = RampBalancingDir.FORWARDS;
-            startingPower = .6;
-        }*/
-        if(currentMode == RampBalancingDir.NONE) {
-            startingPower = .91;
-            currentMode = RampBalancingDir.FORWARDS;
-        }
+            Vector3 accelerometerAxis = new Vector3(accelerometerSubsystem.accelerometer);
+            // Start going up the platform
+            drivingSubsystem.arcadeDrive(.8, 0.); // Drive forwards
+            // Wait .5 seconds to get the current acceleration (if we get it when we're still, it'll see us level)
+            // TODO later, how can we make this not dependent on time?
+            if(!approachRamp.tick()) return;
 
-        if(currentMode == RampBalancingDir.FORWARDS) {
-            // Do this...
-            DriverStation.reportWarning("AAA", false);
-            if (isInRange(10., angle, 16.)) {
-                // We're climbing up the first ramp
-                drivingSubsystem.arcadeDrive(0, -startingPower);
-            } else if(angle <= 5 && rate < 15 ) {
-                drivingSubsystem.arcadeDrive(0, -startingPower/1.5); // Can we turn to lock ourselves in place?
-            } else if(isOutOfRage(angle, 15)) {
-                // We're on the main ramp, we can go slower now
-                drivingSubsystem.arcadeDrive(0, -startingPower);
-            } else {
-                // We're level
-                if(startingPower > .5) startingPower -= 0.005;
-                drivingSubsystem.arcadeDrive(0, -startingPower/1.5); // Can we turn to lock ourselves in place?
+            // It's been 500 ms, let's get the current acceleration
+            if(recordedAcceleration == null)
+                recordedAcceleration = accelerometerAxis;
+
+            // TODO: Make sure it's the Y axis we're measuring
+            if(recordedAcceleration.y < accelerometerAxis.y) {
+                // We've hit a jump, we're now climbing on something
+                currentPhase = RampPhase.GETTING_ON_FIRST_RAMP;
             }
-            // At the end of the phase, if we're falling, change mode to backwards
-/*            if(rate >= 50 || rate <= -50) {
-                startingPower = -.7;
-            };*/
-        } else if(currentMode == RampBalancingDir.BACKWARDS) {
-            // Same as above
-            startingPower *= -1;
-            currentMode = RampBalancingDir.FORWARDS;
+        } else if(currentPhase == RampPhase.GETTING_ON_FIRST_RAMP) {
+            // We hit the ramp, we're either at an angle of 0-26, we can never know, what can we do to fix this?
+            // We can use a timer to see how long we've been on the position, maybe 2/3 sec. to balance the above?
+            // Also check the angle in this range to determine what we need to do
+
+            if (angle < 5) {
+                drivingSubsystem.arcadeDrive(.75, 0);
+            }
+            else {
+                drivingSubsystem.arcadeDrive(.65, 0);
+                currentPhase = RampPhase.ON_FIRST_RAMP;
+            }
+        } else if (currentPhase == RampPhase.ON_FIRST_RAMP) {
+            if (angle > 9) {
+
+            }
         }
     }
 
@@ -123,6 +111,8 @@ public class DrivingTeleopCommand extends CommandBase {
             }
         } else pressedRamps = false;
         if(toggleRamps) {
+            if(currentPhase == RampPhase.NONE)
+                currentPhase = RampPhase.STARTING;
             balanceOnRamp();
         } else {
             drivingSubsystem.arcadeDrive(joystick.getZ(), joystick.getY());
