@@ -26,6 +26,6 @@ public class DrivingSubsystem extends SubsystemBase {
     }
 
     public void arcadeDrive(double forward, double rotation) {
-        robotDrive.arcadeDrive(forward, rotation);
+        robotDrive.arcadeDrive(rotation, -forward);
     }
 }
