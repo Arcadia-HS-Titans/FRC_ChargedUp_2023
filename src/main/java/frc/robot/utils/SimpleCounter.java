@@ -1,6 +1,6 @@
 package frc.robot.utils;
 
-public class SimpleTimer {
+public class SimpleCounter {
 
     public enum Behavior {
         ONCE,
@@ -11,11 +11,11 @@ public class SimpleTimer {
     public int time;
     private final Behavior behavior;
 
-    public SimpleTimer(int maxTime, Behavior behavior) {
+    public SimpleCounter(int maxTime, Behavior behavior) {
         this(maxTime, maxTime, behavior);
     }
 
-    public SimpleTimer(int maxTime, int time, Behavior behavior) {
+    public SimpleCounter(int maxTime, int time, Behavior behavior) {
         this.maxTime = maxTime;
         this.time = time;
         this.behavior = behavior;

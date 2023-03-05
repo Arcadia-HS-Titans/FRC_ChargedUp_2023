@@ -2,21 +2,19 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.interfaces.Accelerometer;
+import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.utils.FileManager;
 import frc.robot.commands.subsystems.AccelerometerSubsystem;
 import frc.robot.commands.subsystems.DoubleSolonoidSubsystem;
 import frc.robot.commands.subsystems.DrivingSubsystem;
 import frc.robot.utils.HelpfulMath;
-import frc.robot.utils.SimpleTimer;
+import frc.robot.utils.SimpleCounter;
 import frc.robot.utils.Vector3;
 
 import java.io.File;
 
-/**
- * https://docs.wpilib.org/en/stable/docs/software/commandbased/commands.html#simple-command-example
- * https://github.com/wpilibsuite/allwpilib/blob/main/wpilibjExamples/src/main/java/edu/wpi/first/wpilibj/examples/hatchbottraditional/commands/DefaultDrive.java
- */
 public class DrivingTeleopCommand extends CommandBase {
 
     public enum RampPhase {
@@ -30,25 +28,27 @@ public class DrivingTeleopCommand extends CommandBase {
 
     private boolean pressedRamps = false;
     private boolean toggleRamps = false;
-    private SimpleTimer approachRamp = new SimpleTimer(25, SimpleTimer.Behavior.ONCE); // 500 ms
+    private SimpleCounter approachRamp = new SimpleCounter(25, SimpleCounter.Behavior.ONCE); // 500 ms
     private RampPhase currentPhase = RampPhase.NONE;
     private Vector3 recordedAcceleration = null;
 
-    private SimpleTimer firstRampTimer = new SimpleTimer(50, SimpleTimer.Behavior.ONCE);
+    private SimpleCounter firstRampTimer = new SimpleCounter(50, SimpleCounter.Behavior.ONCE);
+    private SimpleCounter fallingTimer = new SimpleCounter(20, SimpleCounter.Behavior.INFINITE);
+    private double balancingPower;
+    public static double currentPower = 0;
 
-    //private NEWTIMer
+    private boolean rampTimerFinished = true;
+
+    private double prevRate;
+    private static final double STEP_SIZE = 0.01;
 
     public void balanceOnRamp() {
         double angle = accelerometerSubsystem.gyroScope.getAngle();
-        double rate = accelerometerSubsystem.gyroScope.getRate();
+        double currentRate = accelerometerSubsystem.gyroScope.getRate();
+        double dRate = Math.abs(currentRate) - Math.abs(prevRate);
+        prevRate = currentRate;
         DriverStation.reportWarning("Phase " + currentPhase, false);
         if(currentPhase == RampPhase.STARTING) {
-            // TODO: Have the accelerometer auto-adjust the bot to face ramp, maybe error correcting later
-            // This will be later and before this
-            boolean autoAdjusting = false;
-            if(autoAdjusting) {}
-            // End auto adjusting and start climbing
-
             Vector3 accelerometerAxis = new Vector3(accelerometerSubsystem.accelerometer);
             // Start going up the platform
             drivingSubsystem.arcadeDrive(.75, 0.); // Drive forwards
@@ -61,7 +61,7 @@ public class DrivingTeleopCommand extends CommandBase {
                 recordedAcceleration = accelerometerAxis;
 
             // TODO: Make sure it's the Y axis we're measuring
-            if(recordedAcceleration.z < accelerometerAxis.z) {
+            if(recordedAcceleration.y < accelerometerAxis.y) {
                 // We've hit a jump, we're now climbing on something
                 currentPhase = RampPhase.GETTING_ON_FIRST_RAMP;
             }
@@ -70,27 +70,42 @@ public class DrivingTeleopCommand extends CommandBase {
             // We can use a timer to see how long we've been on the position, maybe 2/3 sec. to balance the above?
             // Also check the angle in this range to determine what we need to do
 
-            if (angle < 5 && angle > -5) {
+            if (HelpfulMath.isInRange(angle, 5)) {
                 drivingSubsystem.arcadeDrive(.75, 0);
             } else {
-                drivingSubsystem.arcadeDrive(.65, 0);
+                drivingSubsystem.arcadeDrive(.75, 0);
                 currentPhase = RampPhase.ON_FIRST_RAMP;
             }
         } else if (currentPhase == RampPhase.ON_FIRST_RAMP) {
-            if (firstRampTimer.tick() == false){
-                drivingSubsystem.arcadeDrive(0.6, 0);
+            if (!firstRampTimer.tick()) {
+                drivingSubsystem.arcadeDrive(0.65, 0);
                 return;
             }
-            if (HelpfulMath.isInRange(50, rate)) {
-                drivingSubsystem.arcadeDrive(0, 0);
-                //TODO: Add timer for it to wait to shift (maybe even make it go backwards a little bit?)
+            if (HelpfulMath.isInRange(4, dRate)) {
+                if(rampTimerFinished) {
+                    rampTimerFinished = false;
+                    balancingPower = (angle > 0) ? Math.abs(balancingPower) : -Math.abs(balancingPower);
+                    DriverStation.reportWarning("Started timer", false);
+                }
             }
-            //HelpfulMath.isInRange(angle, degreeRange);
+            if (!rampTimerFinished) {
+                boolean finishTimerTick = fallingTimer.tick();
+                if (!finishTimerTick) {
+                    drivingSubsystem.arcadeDrive(0, 0);
+                    return;
+                } else {
+/*                    rampTimerFinished = true;
+                    balancingPower = (angle > 0) ? Math.abs(balancingPower)-STEP_SIZE : -Math.abs(balancingPower)-STEP_SIZE;
+                    if(HelpfulMath.isInRange(.5, balancingPower)) balancingPower = .5;
+                    drivingSubsystem.arcadeDrive(0, 0);
+                    //return;*/
+                }
+            }
             if (angle < -7) {
-                drivingSubsystem.arcadeDrive(0.6, 0);
+                drivingSubsystem.arcadeDrive(balancingPower*1.2, 0);
             } else if(angle > 7) {
-                drivingSubsystem.arcadeDrive(-.6, 0);
-            } else if(HelpfulMath.isInRange(angle, 2)) {
+                drivingSubsystem.arcadeDrive(-balancingPower*1.2, 0);
+            } else if(HelpfulMath.isInRange(angle, 4)) {
                 drivingSubsystem.arcadeDrive(0, 0);
             }
 
@@ -120,9 +135,28 @@ public class DrivingTeleopCommand extends CommandBase {
     }
 
     @Override
+    public void initialize() {
+        // TODO: Reset variables here
+        DriverStation.reportWarning("Reset info", false);
+        pressedRamps = false;
+        toggleRamps = false;
+        approachRamp = new SimpleCounter(25, SimpleCounter.Behavior.ONCE); // 500 ms
+        currentPhase = RampPhase.NONE;
+        recordedAcceleration = null;
+        firstRampTimer = new SimpleCounter(50, SimpleCounter.Behavior.ONCE);
+        fallingTimer = new SimpleCounter(30, SimpleCounter.Behavior.INFINITE);
+        balancingPower = .59;
+        currentPower = 0;
+        rampTimerFinished = true;
+        DriverStation.reportWarning("Calibrating gyros", false);
+        accelerometerSubsystem.gyroScope.calibrate();
+        DriverStation.reportWarning("Gyros are finished calibrating", false);
+        currentPhase = RampPhase.NONE;
+    }
+
+    @Override
     public void execute() {
         // Called every 20 ms
-        recordGyros();
         if(joystick.getRawButton(2)) {
             if(!pressedRamps) {
                 pressedRamps = true;
@@ -136,10 +170,13 @@ public class DrivingTeleopCommand extends CommandBase {
         } else {
             drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ());
         }
+        recordGyros();
     }
 
+
+
     public void recordGyros() {
-        File file = null;
+        File file;
         if(joystick.getRawButton(1)) {
             if(!pressed) {
                 loggingData = !loggingData;
@@ -148,8 +185,9 @@ public class DrivingTeleopCommand extends CommandBase {
                     startTime = System.currentTimeMillis();
                     iteration++;
                     file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,G2Angle,G2Rate\n");
-                }
+                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,G2Angle,G2Rate,AccelX,AccelY,AccelZ,Phase" +
+                            ",RampTimer,Power\n");
+                } else DriverStation.reportWarning("Stopped recording!", false);
                 pressed = true;
             }
         } else pressed = false;
@@ -158,10 +196,19 @@ public class DrivingTeleopCommand extends CommandBase {
         if(loggingData) {
             timer++;
             if(timer >= maxTimer) {
+                Gyro gyro1 = accelerometerSubsystem.gyroScope;
+                Gyro gyro2 = accelerometerSubsystem.gyroScope2;
+                Accelerometer accelerometer = accelerometerSubsystem.accelerometer;
                 StringBuilder toWrite = new StringBuilder("").append(System.currentTimeMillis() - startTime).append(","); // In Java
-                toWrite.append(accelerometerSubsystem.gyroScope.getAngle()).append(",").append(accelerometerSubsystem.gyroScope.getRate()).append(",");
-                toWrite.append(accelerometerSubsystem.gyroScope2.getAngle()).append(",").append(accelerometerSubsystem.gyroScope2.getRate()).append("\n");
-                FileManager.appendFile(file, toWrite.toString());
+                toWrite.append(gyro1.getAngle()).append(",").append(gyro1.getRate()).append(",");
+                toWrite.append(gyro2.getAngle()).append(",").append(gyro2.getRate()).append(",");
+                toWrite.append(accelerometer.getX()).append(",");
+                toWrite.append(accelerometer.getY()).append(",");
+                toWrite.append(accelerometer.getZ()).append(",");
+                toWrite.append(currentPhase).append(",");
+                toWrite.append(rampTimerFinished).append(",");
+                toWrite.append(currentPower).append("\n");
+            FileManager.appendFile(file, toWrite.toString());
                 timer = 0;
             }
         }

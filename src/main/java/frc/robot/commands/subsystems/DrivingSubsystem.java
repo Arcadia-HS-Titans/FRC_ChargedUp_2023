@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.PWMTalonSRX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.commands.DrivingTeleopCommand;
 
 public class DrivingSubsystem extends SubsystemBase {
     // Left motors
@@ -26,6 +27,7 @@ public class DrivingSubsystem extends SubsystemBase {
     }
 
     public void arcadeDrive(double forward, double rotation) {
+        DrivingTeleopCommand.currentPower = forward;
         robotDrive.arcadeDrive(rotation, -forward);
     }
 }
