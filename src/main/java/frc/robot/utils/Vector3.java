@@ -20,4 +20,8 @@ public class Vector3 {
         this.y = accelerometer.getY();
         this.z = accelerometer.getZ();
     }
+
+    public String toString() {
+        return "X:" + x + " Y:" + y + "Z:"+z;
+    }
 }

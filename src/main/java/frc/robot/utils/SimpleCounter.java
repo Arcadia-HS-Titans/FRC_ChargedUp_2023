@@ -21,6 +21,9 @@ public class SimpleCounter {
         this.behavior = behavior;
     }
 
+    /**
+     * @return false if the timer's going, true if it reached it's time (and resets if Infinite is the choice)
+     */
     public boolean tick() {
         time--;
         if(time <= 0) {

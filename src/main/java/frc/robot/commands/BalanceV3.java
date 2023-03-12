@@ -26,17 +26,18 @@ public class BalanceV3 {
     public static double currentPower = 0;
 
     private double prevRate;
-    private static final double STEP_SIZE = 0.01;
     private double reachedBump;
 
+    private SimpleCounter firstRampDelay; //2400 ms
+
     public void balanceOnRamp(AccelerometerSubsystem accelerometerSubsystem, DrivingSubsystem drivingSubsystem) {
-        double angle = accelerometerSubsystem.gyroScope.getAngle();
-        double currentRate = accelerometerSubsystem.gyroScope.getRate();
+        double angle = accelerometerSubsystem.getAngle();
+        double currentRate = accelerometerSubsystem.getCurrentRate();
         double dRate = Math.abs(currentRate) - Math.abs(prevRate);
         prevRate = currentRate;
         DriverStation.reportWarning("Phase " + currentPhase, false);
         if(currentPhase == RampPhase.STARTING) {
-            Vector3 accelerometerAxis = new Vector3(accelerometerSubsystem.accelerometer);
+            Vector3 accelerometerAxis = (accelerometerSubsystem.getAcceleration());
             // Start going up the platform
             drivingSubsystem.arcadeDrive(.75, 0.); // Drive forwards
             // Wait .5 seconds to get the current acceleration (if we get it when we're still, it'll see us level)
@@ -46,7 +47,7 @@ public class BalanceV3 {
             // It's been 500 ms, let's get the current acceleration
             if(recordedAcceleration == null)
                 recordedAcceleration = accelerometerAxis;
-
+            DriverStation.reportWarning("Acceleration: " + accelerometerAxis, false);
             // TODO: Make sure it's the Y axis we're measuring
             if(recordedAcceleration.y < accelerometerAxis.y) {
                 // We've hit a jump, we're now climbing on something
@@ -57,7 +58,7 @@ public class BalanceV3 {
             // We can use a timer to see how long we've been on the position, maybe 2/3 sec. to balance the above?
             // Also check the angle in this range to determine what we need to do
 
-            if (HelpfulMath.isInRange(angle, 5)) {
+            if (!firstRampDelay.tick()) {
                 drivingSubsystem.arcadeDrive(.75, 0);
             } else {
                 drivingSubsystem.arcadeDrive(.75, 0);
@@ -81,9 +82,9 @@ public class BalanceV3 {
                 drivingSubsystem.arcadeDrive(0, 0);
             } else {
                 // We're not tipping over
-                if(angle > 7)
+                if(angle > 2)
                     drivingSubsystem.arcadeDrive(-balancingPower, 0);
-                else if(angle < -7)
+                else if(angle < -2)
                     drivingSubsystem.arcadeDrive(balancingPower, 0);
                 else
                     drivingSubsystem.arcadeDrive(0, 0);
@@ -94,8 +95,9 @@ public class BalanceV3 {
     public BalanceV3() {
         DriverStation.reportWarning("Reset Ramp Balancing stuff", false);
         approachRamp = new SimpleCounter(25, SimpleCounter.Behavior.ONCE); // 500 ms
+        firstRampDelay = new SimpleCounter(120, SimpleCounter.Behavior.ONCE);
         recordedAcceleration = null;
-        balancingPower = .59;
+        balancingPower = .63;
         currentPower = 0;
         currentPhase = RampPhase.STARTING;
         reachedBump = 0;

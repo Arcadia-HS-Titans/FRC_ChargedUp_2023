@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.*;
+import frc.robot.utils.Vector3;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
