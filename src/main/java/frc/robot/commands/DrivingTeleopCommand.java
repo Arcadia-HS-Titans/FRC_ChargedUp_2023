@@ -1,12 +1,9 @@
 package frc.robot.commands;
 
-import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.commands.subsystems.USSubsystem;
 import frc.robot.utils.*;
 import frc.robot.commands.subsystems.AccelerometerSubsystem;
 import frc.robot.commands.subsystems.DoubleSolonoidSubsystem;
@@ -25,15 +22,18 @@ public class DrivingTeleopCommand extends CommandBase {
     public AccelerometerSubsystem accelerometerSubsystem;
     public DoubleSolonoidSubsystem doubleSolonoidSubsystem;
     public DrivingSubsystem drivingSubsystem;
+    public USSubsystem usSystem;
 
     public DrivingTeleopCommand() {
         this.joystick = new Joystick(0);
         this.accelerometerSubsystem = new AccelerometerSubsystem();
         doubleSolonoidSubsystem = new DoubleSolonoidSubsystem();
         drivingSubsystem = new DrivingSubsystem();
+        this.usSystem = new USSubsystem();
         this.addRequirements(accelerometerSubsystem);
         this.addRequirements(doubleSolonoidSubsystem);
         this.addRequirements(drivingSubsystem);
+        this.addRequirements(usSystem);
     }
 
     @Override
@@ -46,6 +46,8 @@ public class DrivingTeleopCommand extends CommandBase {
     public void execute() {
         // Called every 20 ms
         accelerometerSubsystem.update();
+        usSystem.update();
+        SmartDashboard.putNumber("US Inches", usSystem.getReading());
         if(joystick.getRawButton(2)) {
             if(!rampButtonPressed) {
                 rampButtonPressed = true;
@@ -56,9 +58,7 @@ public class DrivingTeleopCommand extends CommandBase {
             balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem);
         } else {
             drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ());
-            //BalanceV3.currentPhase = BalanceV3.RampPhase.NONE;
         }
-        //SmartDashboard.putString("Phase", String.valueOf(BalanceV3.currentPhase));
         recordGyros();
     }
 
@@ -100,4 +100,3 @@ public class DrivingTeleopCommand extends CommandBase {
         }
     }
 }
-// https://docs.wpilib.org/en/stable/docs/software/hardware-apis/pneumatics/pneumatics.html

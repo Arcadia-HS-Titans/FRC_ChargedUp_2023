@@ -60,6 +60,6 @@ public class AccelerometerSubsystem extends SubsystemBase {
     }
 
     public void calibrate() {
-        gyroScope.calibrate();
+        gyroScope.reset();
     }
 }
