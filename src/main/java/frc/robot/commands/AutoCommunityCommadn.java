@@ -21,7 +21,7 @@ public class AutoCommunityCommadn extends CommandBase {
         this.joystick = joystick;
     }
 
-    private SimpleCounter counter = new SimpleCounter(100, SimpleCounter.Behavior.ONCE);
+    private SimpleCounter counter = new SimpleCounter(175, SimpleCounter.Behavior.ONCE);
     @Override
     public void execute() {
         if(!counter.tick()) {

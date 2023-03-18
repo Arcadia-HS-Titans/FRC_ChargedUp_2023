@@ -109,7 +109,7 @@ public class BalanceV3 {
         approachRamp = new SimpleCounter(25, SimpleCounter.Behavior.ONCE); // 500 ms
         firstRampDelay = new SimpleCounter(60, SimpleCounter.Behavior.ONCE); // was 120 on phoebe
         recordedAcceleration = null;
-        balancingPower = .61;// .63 on phoebe
+        balancingPower = .65;// .63 on phoebe
         currentPhase = RampPhase.STARTING;
         reachedBump = 0;
     }

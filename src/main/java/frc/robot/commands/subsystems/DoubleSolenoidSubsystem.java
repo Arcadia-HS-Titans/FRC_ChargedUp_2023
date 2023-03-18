@@ -30,7 +30,7 @@ public class DoubleSolenoidSubsystem extends SubsystemBase {
     public SolenoidStatus wrist;
 
     public DoubleSolenoidSubsystem() {
-        longArm = new SolenoidStatus(4,5);
+        longArm = new SolenoidStatus(5,4);
         shortArm = new SolenoidStatus(6,7);
         gripper = new SolenoidStatus(2,3);
         //wrist = new SolenoidStatus(6, 7);

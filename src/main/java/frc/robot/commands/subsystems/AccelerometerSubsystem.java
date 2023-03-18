@@ -96,7 +96,7 @@ public class AccelerometerSubsystem extends SubsystemBase {
 
     public void assignConst() {
         dampener = -(Math.abs(total/iterations));
-        totalDampener = dampener;
+        totalDampener = dampener * iterations/2.;
         calibrating = false;
     }
 }
