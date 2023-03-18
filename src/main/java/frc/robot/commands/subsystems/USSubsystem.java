@@ -3,6 +3,7 @@ package frc.robot.commands.subsystems;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.Ultrasonic;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class USSubsystem extends SubsystemBase {
@@ -14,11 +15,14 @@ public class USSubsystem extends SubsystemBase {
         Ultrasonic.setAutomaticMode(true);
     }
 
-    public void update() {
-        reading = ultrasonic.getRangeInches();
-    }
-
     public double getReading() {
         return reading;
+    }
+
+    @Override
+    public void periodic() {
+        reading = ultrasonic.getRangeInches();
+        SmartDashboard.putNumber("US Inches", reading);
+        super.periodic();
     }
 }

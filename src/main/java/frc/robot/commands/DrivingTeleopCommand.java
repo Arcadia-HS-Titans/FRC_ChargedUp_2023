@@ -3,11 +3,8 @@ package frc.robot.commands;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.commands.subsystems.USSubsystem;
+import frc.robot.commands.subsystems.*;
 import frc.robot.utils.*;
-import frc.robot.commands.subsystems.AccelerometerSubsystem;
-import frc.robot.commands.subsystems.DoubleSolonoidSubsystem;
-import frc.robot.commands.subsystems.DrivingSubsystem;
 
 import java.io.File;
 
@@ -19,36 +16,80 @@ public class DrivingTeleopCommand extends CommandBase {
     public BalanceV3 balanceV3 = new BalanceV3();
 
     private final Joystick joystick;
-    public AccelerometerSubsystem accelerometerSubsystem;
-    public DoubleSolonoidSubsystem doubleSolonoidSubsystem;
-    public DrivingSubsystem drivingSubsystem;
-    public USSubsystem usSystem;
+    private final Joystick gamepad;
+    private AccelerometerSubsystem accelerometerSubsystem;
+    private DoubleSolenoidSubsystem doubleSolonoidSubsystem;
+    private DrivingSubsystem drivingSubsystem;
+    private USSubsystem usSystem;
 
-    public DrivingTeleopCommand() {
-        this.joystick = new Joystick(0);
-        this.accelerometerSubsystem = new AccelerometerSubsystem();
-        doubleSolonoidSubsystem = new DoubleSolonoidSubsystem();
-        drivingSubsystem = new DrivingSubsystem();
-        this.usSystem = new USSubsystem();
+    private CompressorSubsystem compressorSubsystem;
+    private WinchSubsystem winchSubsystem;
+
+    public DrivingTeleopCommand(AccelerometerSubsystem accelerometerSubsystem,
+                                DoubleSolenoidSubsystem doubleSolonoidSubsystem,
+                                DrivingSubsystem drivingSubsystem,
+                                USSubsystem usSystem,
+                                CompressorSubsystem compressorSubsystem,
+                                WinchSubsystem winchSubsystem,
+                                Joystick joystick, Joystick gamepad) {
+        this.joystick = joystick;
+        this.gamepad = gamepad;
+        this.accelerometerSubsystem = accelerometerSubsystem;
+        this.doubleSolonoidSubsystem = doubleSolonoidSubsystem;
+        this.drivingSubsystem = drivingSubsystem;
+        this.usSystem = usSystem;
+        this.compressorSubsystem = compressorSubsystem;
+        this.winchSubsystem = winchSubsystem;
         this.addRequirements(accelerometerSubsystem);
         this.addRequirements(doubleSolonoidSubsystem);
         this.addRequirements(drivingSubsystem);
-        this.addRequirements(usSystem);
+        this.addRequirements(compressorSubsystem);
+        this.addRequirements(winchSubsystem);
+        if(usSystem != null)
+            this.addRequirements(usSystem);
     }
 
     @Override
     public void initialize() {
         balanceV3 = new BalanceV3();
         accelerometerSubsystem.calibrate();
+        highToggle = new SimpleToggle();
+        midToggle = new SimpleToggle();
+        lowToggle = new SimpleToggle();
+        gripperToggle = new SimpleToggle();
+        //accelerometerSubsystem.gyroScope.calibrate();
     }
+
+    public static final class SimpleToggle{
+        private boolean pressed;
+        private boolean toggled;
+
+        public SimpleToggle() {
+            pressed = false;
+            toggled = false;
+        }
+
+        public boolean update(boolean status) {
+            if(status) {
+                if(!pressed) {
+                    pressed = true;
+                    toggled = !toggled;
+                }
+            } else pressed = false;
+            return toggled;
+        }
+    }
+
+    private SimpleToggle lowToggle = new SimpleToggle();
+    private SimpleToggle midToggle = new SimpleToggle();
+    private SimpleToggle highToggle = new SimpleToggle();
+    private SimpleToggle gripperToggle = new SimpleToggle();
 
     @Override
     public void execute() {
         // Called every 20 ms
-        accelerometerSubsystem.update();
-        usSystem.update();
-        SmartDashboard.putNumber("US Inches", usSystem.getReading());
-        if(joystick.getRawButton(2)) {
+        //SmartDashboard.putNumber("US Inches", usSystem.getReading());
+        if(joystick.getRawButton(11)) {
             if(!rampButtonPressed) {
                 rampButtonPressed = true;
                 useRamps = !useRamps;
@@ -57,13 +98,47 @@ public class DrivingTeleopCommand extends CommandBase {
         if(useRamps) {
             balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem);
         } else {
-            drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ());
+            /*if(lowToggle.update(gamepad.getRawButton(1))) {
+                doubleSolonoidSubsystem.armHigh.close();
+                doubleSolonoidSubsystem.armMid.close();
+            }
+            if(midToggle.update(gamepad.getRawButton(2)) || midToggle.update(gamepad.getRawButton(3))) {
+                doubleSolonoidSubsystem.armHigh.open();
+                doubleSolonoidSubsystem.armMid.close();
+            }
+            if(highToggle.update(gamepad.getRawButton(4))) {
+                doubleSolonoidSubsystem.armMid.open();
+                doubleSolonoidSubsystem.armHigh.open();
+            }*/
+
+
+            if(highToggle.update(gamepad.getRawButton(1))) {
+                doubleSolonoidSubsystem.longArm.open();
+            } else doubleSolonoidSubsystem.longArm.close();
+            if(lowToggle.update(gamepad.getRawButton(4))) {
+                doubleSolonoidSubsystem.shortArm.open();
+            } else doubleSolonoidSubsystem.shortArm.close();
+
+
+
+            if(gripperToggle.update(gamepad.getRawButton(6))) {
+                doubleSolonoidSubsystem.gripper.open();
+            } else doubleSolonoidSubsystem.gripper.close();
+
+            winchSubsystem.setMotor(gamepad.getRawAxis(1));
+
+/*            if(joystick.getRawAxis(0) > 0.5) {
+                drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ());
+            } else {
+                drivingSubsystem.arcadeDrive(-joystick.getY() * .98, joystick.getZ() * .87);
+            }*/
+            drivingSubsystem.arcadeDrive(-joystick.getY() * .98, joystick.getZ() * .87);
         }
         recordGyros();
     }
 
 
-    private final SimpleCounter recordingTimer = new SimpleCounter(5, SimpleCounter.Behavior.INFINITE);
+    private final SimpleCounter recordingTimer = new SimpleCounter(0, SimpleCounter.Behavior.INFINITE);
     private long startTime = System.currentTimeMillis();
     private int iteration = 0;
     private boolean loggingData = false;
@@ -78,8 +153,8 @@ public class DrivingTeleopCommand extends CommandBase {
                     startTime = System.currentTimeMillis();
                     iteration++;
                     file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,G2Angle,G2Rate,AccelX,AccelY,AccelZ,Phase" +
-                            ",RampTimer,Power\n");
+                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,AccelX,AccelY,AccelZ,Phase" +
+                            ",Power,JoystickX,JoystickY\n");
                 } else SmartDashboard.putBoolean("Recording Data", false);
                 dataPressed = true;
             }
@@ -90,12 +165,15 @@ public class DrivingTeleopCommand extends CommandBase {
         if(recordingTimer.tick()) {
             file = new File("/home/lvuser/GyroData" + iteration + ".csv");
             StringBuilder toWrite = new StringBuilder().append(System.currentTimeMillis() - startTime).append(",");
-            toWrite.append(accelerometerSubsystem.getAngle()).append(",").append(accelerometerSubsystem.getCurrentRate()).append(",");
+            toWrite.append(accelerometerSubsystem.getAngle()).append(",")
+            .append(accelerometerSubsystem.getCurrentRate()).append(",");
             toWrite.append(accelerometerSubsystem.getX()).append(",");
             toWrite.append(accelerometerSubsystem.getY()).append(",");
             toWrite.append(accelerometerSubsystem.getZ()).append(",");
-            //toWrite.append(BalanceV3.currentPhase).append(",");
-            toWrite.append(drivingSubsystem.currentPower).append("\n");
+            toWrite.append(BalanceV3.currentPhase).append(",");
+            toWrite.append(drivingSubsystem.currentPower).append(",");
+            toWrite.append(joystick.getZ()).append(",");
+            toWrite.append(joystick.getY()).append(",").append("\n");
             FileManager.appendFile(file, toWrite.toString());
         }
     }

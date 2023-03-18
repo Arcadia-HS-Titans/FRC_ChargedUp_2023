@@ -5,14 +5,15 @@
 package frc.robot;
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.*;
+import edu.wpi.first.cscore.VideoCamera;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.EventImportance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.*;
-import frc.robot.utils.Vector3;
+import frc.robot.commands.subsystems.*;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,11 +23,21 @@ import frc.robot.utils.Vector3;
  */
 public class RobotContainer {
     // The robot's subsystems
+    private final AccelerometerSubsystem accelerometerSubsystem;
+    private final DoubleSolenoidSubsystem doubleSolenoidSubsystem;
+    private final DrivingSubsystem drivingSubsystem;
+    private USSubsystem usSubsystem;
+    private final CompressorSubsystem compressorSubsystem;
+    private final WinchSubsystem winchSubsystem;
 
     // Devices
+    private final Joystick joystick = new Joystick(0);
+    private final Joystick gamepad = new Joystick(1);
 
     // The main commands of the robot
     private final Command teleopCommand;
+    private final Command autoCommand;
+    private final Command autoCommunityCommand;
 
 
     // A chooser for autonomous commands
@@ -34,21 +45,43 @@ public class RobotContainer {
 
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
-
-        // Starts up a camera
+        try {
+            CameraServer.startAutomaticCapture();
+            //CameraServer.startAutomaticCapture(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Shuffleboard.addEventMarker("A", "a", EventImportance.kNormal);
-        this.teleopCommand = new DrivingTeleopCommand();
+
+        this.accelerometerSubsystem = new AccelerometerSubsystem();
+        this.doubleSolenoidSubsystem = new DoubleSolenoidSubsystem();
+        this.drivingSubsystem = new DrivingSubsystem();
+        this.usSubsystem = null;
+        this.compressorSubsystem = new CompressorSubsystem();
+        this.winchSubsystem = new WinchSubsystem();
+
+        this.teleopCommand = new DrivingTeleopCommand(accelerometerSubsystem, doubleSolenoidSubsystem,
+                drivingSubsystem, usSubsystem, compressorSubsystem, winchSubsystem, joystick, gamepad);
+        this.autoCommand = new AutoCommand(accelerometerSubsystem, doubleSolenoidSubsystem,
+                drivingSubsystem, usSubsystem, compressorSubsystem, joystick);
+        this.autoCommunityCommand = new AutoCommunityCommadn(drivingSubsystem, joystick);
 
         // Add commands to the autonomous command chooser
-        m_chooser.setDefaultOption("TeleOperated", teleopCommand);
+        //m_chooser.setDefaultOption("No Ramp Auto", teleopCommand); // TODO: Actual option
+        m_chooser.setDefaultOption("Ramp Auto", autoCommand);
+        m_chooser.addOption("Taxi Auto", autoCommunityCommand);
 
         // Put the chooser on the dashboard
         Shuffleboard.getTab("Autonomous").add(m_chooser);
-        Shuffleboard.getTab("TeleOperated").add(m_chooser);
+        //Shuffleboard.getTab("TeleOperated").add(m_chooser);
     }
 
     public Command getTeleopCommand() {
         return teleopCommand;
+    }
+
+    public Command getAutoCommand() {
+        return m_chooser.getSelected();
     }
 }
