@@ -53,7 +53,7 @@ public class AutoCommand extends CommandBase {
     public void initialize() {
         balanceV3 = new BalanceV3();
         accelerometerSubsystem.calibrate();
-        calibrator = new SimpleCounter(250, SimpleCounter.Behavior.ONCE);
+        calibrator = new SimpleCounter(150, SimpleCounter.Behavior.ONCE);
     }
 
     private SimpleCounter subPhase = new SimpleCounter(5, SimpleCounter.Behavior.ONCE);
@@ -108,7 +108,7 @@ public class AutoCommand extends CommandBase {
         if(accelerometerSubsystem.calibrating) {
             accelerometerSubsystem.assignConst();
         }
-        balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem);
+        balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem, false);
     }
 
 

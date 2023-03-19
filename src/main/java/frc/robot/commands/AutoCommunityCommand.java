@@ -5,17 +5,16 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.commands.subsystems.*;
 import frc.robot.utils.FileManager;
-import frc.robot.utils.HelpfulMath;
 import frc.robot.utils.SimpleCounter;
 
 import java.io.File;
 
-public class AutoCommunityCommadn extends CommandBase {
+public class AutoCommunityCommand extends CommandBase {
 
     public DrivingSubsystem drivingSubsystem;
     public Joystick joystick;
 
-    public AutoCommunityCommadn(DrivingSubsystem drivingSubsystem, Joystick joystick) {
+    public AutoCommunityCommand(DrivingSubsystem drivingSubsystem, Joystick joystick) {
         this.drivingSubsystem = drivingSubsystem;
         this.addRequirements(drivingSubsystem);
         this.joystick = joystick;

@@ -49,46 +49,26 @@ public class DrivingTeleopCommand extends CommandBase {
             this.addRequirements(usSystem);
     }
 
+    private SimpleToggle gripperToggle = new SimpleToggle();
+
     @Override
     public void initialize() {
         balanceV3 = new BalanceV3();
         accelerometerSubsystem.calibrate();
-        highToggle = new SimpleToggle();
-        midToggle = new SimpleToggle();
-        lowToggle = new SimpleToggle();
         gripperToggle = new SimpleToggle();
-        //accelerometerSubsystem.gyroScope.calibrate();
     }
 
-    public static final class SimpleToggle{
-        private boolean pressed;
-        private boolean toggled;
-
-        public SimpleToggle() {
-            pressed = false;
-            toggled = false;
-        }
-
-        public boolean update(boolean status) {
-            if(status) {
-                if(!pressed) {
-                    pressed = true;
-                    toggled = !toggled;
-                }
-            } else pressed = false;
-            return toggled;
-        }
+    public enum ArmPosition {
+        LOW,
+        MID,
+        HIGH
     }
 
-    private SimpleToggle lowToggle = new SimpleToggle();
-    private SimpleToggle midToggle = new SimpleToggle();
-    private SimpleToggle highToggle = new SimpleToggle();
-    private SimpleToggle gripperToggle = new SimpleToggle();
+    private ArmPosition currentPos = ArmPosition.LOW;
 
     @Override
     public void execute() {
         // Called every 20 ms
-        //SmartDashboard.putNumber("US Inches", usSystem.getReading());
         if(joystick.getRawButton(11)) {
             if(!rampButtonPressed) {
                 rampButtonPressed = true;
@@ -96,29 +76,26 @@ public class DrivingTeleopCommand extends CommandBase {
             }
         } else rampButtonPressed = false;
         if(useRamps) {
-            balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem);
+            balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem, true);
         } else {
-            /*if(lowToggle.update(gamepad.getRawButton(1))) {
-                doubleSolonoidSubsystem.armHigh.close();
-                doubleSolonoidSubsystem.armMid.close();
+            // Sebastion's Toggle system state machine
+            if(gamepad.getRawButton(1)) {
+                currentPos = ArmPosition.LOW;
+            } else if(gamepad.getRawButton(2) || gamepad.getRawButton(3)) {
+                currentPos = ArmPosition.MID;
+            } else if(gamepad.getRawButton(4)) {
+                currentPos = ArmPosition.HIGH;
             }
-            if(midToggle.update(gamepad.getRawButton(2)) || midToggle.update(gamepad.getRawButton(3))) {
-                doubleSolonoidSubsystem.armHigh.open();
-                doubleSolonoidSubsystem.armMid.close();
-            }
-            if(highToggle.update(gamepad.getRawButton(4))) {
-                doubleSolonoidSubsystem.armMid.open();
-                doubleSolonoidSubsystem.armHigh.open();
-            }*/
-
-
-            if(highToggle.update(gamepad.getRawButton(1))) {
+            if(currentPos == ArmPosition.LOW) {
+                doubleSolonoidSubsystem.longArm.close();
+                doubleSolonoidSubsystem.shortArm.close();
+            } else if(currentPos == ArmPosition.MID) {
+                doubleSolonoidSubsystem.shortArm.close();
                 doubleSolonoidSubsystem.longArm.open();
-            } else doubleSolonoidSubsystem.longArm.close();
-            if(lowToggle.update(gamepad.getRawButton(4))) {
+            } else if(currentPos == ArmPosition.HIGH) {
+                doubleSolonoidSubsystem.longArm.open();
                 doubleSolonoidSubsystem.shortArm.open();
-            } else doubleSolonoidSubsystem.shortArm.close();
-
+            }
 
 
             if(gripperToggle.update(gamepad.getRawButton(6))) {
@@ -126,12 +103,6 @@ public class DrivingTeleopCommand extends CommandBase {
             } else doubleSolonoidSubsystem.gripper.close();
 
             winchSubsystem.setMotor(gamepad.getRawAxis(1));
-
-/*            if(joystick.getRawAxis(0) > 0.5) {
-                drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ());
-            } else {
-                drivingSubsystem.arcadeDrive(-joystick.getY() * .98, joystick.getZ() * .87);
-            }*/
             drivingSubsystem.arcadeDrive(-joystick.getY() * .98, joystick.getZ() * .87);
         }
         recordGyros();

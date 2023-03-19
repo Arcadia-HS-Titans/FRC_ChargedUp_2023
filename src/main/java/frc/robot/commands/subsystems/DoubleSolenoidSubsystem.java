@@ -27,13 +27,11 @@ public class DoubleSolenoidSubsystem extends SubsystemBase {
     public SolenoidStatus shortArm;
     public SolenoidStatus longArm;
     public SolenoidStatus gripper;
-    public SolenoidStatus wrist;
 
     public DoubleSolenoidSubsystem() {
         longArm = new SolenoidStatus(5,4);
         shortArm = new SolenoidStatus(6,7);
         gripper = new SolenoidStatus(2,3);
-        //wrist = new SolenoidStatus(6, 7);
     }
 
     @Override
@@ -41,7 +39,6 @@ public class DoubleSolenoidSubsystem extends SubsystemBase {
         SmartDashboard.putBoolean("Arm Mid", shortArm.status);
         SmartDashboard.putBoolean("Arm High", longArm.status);
         SmartDashboard.putBoolean("Gripper Sol.", gripper.status);
-        //SmartDashboard.putBoolean("Wrist Sol.", wrist.status);
         super.periodic();
     }
 }

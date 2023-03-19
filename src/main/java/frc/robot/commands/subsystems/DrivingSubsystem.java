@@ -28,7 +28,16 @@ public class DrivingSubsystem extends SubsystemBase {
 
     public void arcadeDrive(double forward, double rotation) {
         currentPower = forward;
-        SmartDashboard.putNumberArray("Power", new double[]{forward, rotation});
         robotDrive.arcadeDrive(rotation, -forward);
+    }
+
+    public void arcadeDrive(double forward, double rotation,  boolean direction) {
+        // dir = true = forwards, false = backwards
+        currentPower = forward;
+        if(direction) {
+            robotDrive.arcadeDrive(rotation, -forward);
+        } else {
+            robotDrive.arcadeDrive(rotation, forward);
+        }
     }
 }

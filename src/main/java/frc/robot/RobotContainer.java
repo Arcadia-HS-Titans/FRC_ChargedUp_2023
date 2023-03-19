@@ -5,12 +5,10 @@
 package frc.robot;
 
 import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.VideoCamera;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.shuffleboard.EventImportance;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.*;
 import frc.robot.commands.subsystems.*;
@@ -65,7 +63,7 @@ public class RobotContainer {
                 drivingSubsystem, usSubsystem, compressorSubsystem, winchSubsystem, joystick, gamepad);
         this.autoCommand = new AutoCommand(accelerometerSubsystem, doubleSolenoidSubsystem,
                 drivingSubsystem, usSubsystem, compressorSubsystem, joystick);
-        this.autoCommunityCommand = new AutoCommunityCommadn(drivingSubsystem, joystick);
+        this.autoCommunityCommand = new AutoCommunityCommand(drivingSubsystem, joystick);
 
         // Add commands to the autonomous command chooser
         //m_chooser.setDefaultOption("No Ramp Auto", teleopCommand); // TODO: Actual option
