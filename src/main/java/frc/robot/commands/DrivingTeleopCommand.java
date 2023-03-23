@@ -123,7 +123,7 @@ public class DrivingTeleopCommand extends CommandBase {
             } else doubleSolonoidSubsystem.gripper.close();
 
             winchSubsystem.setMotor(gamepad.getRawAxis(1));
-            drivingSubsystem.arcadeDrive(-joystick.getY() * .98, joystick.getZ() * .87);
+            drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ() * .87);
         }
         recordGyros();
     }

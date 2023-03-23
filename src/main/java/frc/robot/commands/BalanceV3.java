@@ -23,6 +23,7 @@ public class BalanceV3 {
     private double balancingPower;
 
     private SimpleCounter firstRampDelay; //2400 ms
+    private SimpleCounter secondRD;
 
     public void balanceOnRamp(AccelerometerSubsystem accelerometerSubsystem, DrivingSubsystem drivingSubsystem,
                               boolean direction) { // true = forwards, false = backwards
@@ -45,11 +46,11 @@ public class BalanceV3 {
             }
         } else if(currentPhase == RampPhase.GETTING_ON_FIRST_RAMP) {
             if (!firstRampDelay.tick()) {
-                drivingSubsystem.arcadeDrive(.75, 0, direction);
+                drivingSubsystem.arcadeDrive(.8, 0, direction);
                 return;
             }
 
-            drivingSubsystem.arcadeDrive(.75, 0, direction);
+            drivingSubsystem.arcadeDrive(.8, 0, direction);
             currentPhase = RampPhase.ON_FIRST_RAMP;
         } else if (currentPhase == RampPhase.ON_FIRST_RAMP) {
             // We check rate so that we don't go overboard
@@ -61,10 +62,18 @@ public class BalanceV3 {
             }
             // We're not tipping over
             if(angle > 6) {
-                drivingSubsystem.arcadeDrive(balancingPower, 0);
+                if(!secondRD.tick()) {
+                    drivingSubsystem.arcadeDrive(.9, 0);
+                }else {
+                    drivingSubsystem.arcadeDrive(balancingPower, 0);
+                }
                 return;
             } else if(angle < -5) {
-                drivingSubsystem.arcadeDrive(-balancingPower, 0);
+                if(!secondRD.tick()) {
+                    drivingSubsystem.arcadeDrive(-.9, 0);
+                }else {
+                    drivingSubsystem.arcadeDrive(-balancingPower, 0);
+                }
                 return;
             }
 
@@ -83,8 +92,9 @@ public class BalanceV3 {
 
     public BalanceV3() {
         DriverStation.reportWarning("Reset Ramp Balancing stuff", false);
-        approachRamp = new SimpleCounter(25, SimpleCounter.Behavior.ONCE); // 500 ms
+        approachRamp = new SimpleCounter(50, SimpleCounter.Behavior.ONCE); // 500 ms
         firstRampDelay = new SimpleCounter(120, SimpleCounter.Behavior.ONCE); // was 120 on phoebe
+        secondRD = new SimpleCounter(60, SimpleCounter.Behavior.ONCE);
         recordedAcceleration = null;
         balancingPower = .67;// .63 on phoebe
         currentPhase = RampPhase.STARTING;
