@@ -54,6 +54,7 @@ public class AutoCommand extends CommandBase {
         balanceV3 = new BalanceV3();
         accelerometerSubsystem.calibrate();
         calibrator = new SimpleCounter(150, SimpleCounter.Behavior.ONCE);
+        pushObject = new SimpleCounter(150, SimpleCounter.Behavior.ONCE);
     }
 
     private SimpleCounter subPhase = new SimpleCounter(5, SimpleCounter.Behavior.ONCE);
@@ -96,11 +97,20 @@ public class AutoCommand extends CommandBase {
     public void balancingOnRamp() {}
 
     private SimpleCounter calibrator;
+    private SimpleCounter pushObject;
 
     @Override
     public void execute() {
         // Called every 20 ms
         //gettingOverRamp();
+
+        if(!pushObject.tick()) {
+            if(pushObject.time < 100)
+                doubleSolonoidSubsystem.shortArm.open();
+            else
+                doubleSolonoidSubsystem.shortArm.close();
+        }
+
         if(!calibrator.tick()) {
             accelerometerSubsystem.tickCalibration();
             return;
@@ -109,43 +119,5 @@ public class AutoCommand extends CommandBase {
             accelerometerSubsystem.assignConst();
         }
         balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem, false);
-    }
-
-
-    private final SimpleCounter recordingTimer = new SimpleCounter(5, SimpleCounter.Behavior.INFINITE);
-    private long startTime = System.currentTimeMillis();
-    private int iteration = 0;
-    private boolean loggingData = false;
-    private boolean dataPressed = false;
-    public void recordGyros() {
-        File file;
-        if(joystick.getRawButton(1)) {
-            if(!dataPressed) {
-                loggingData = !loggingData;
-                if(loggingData) {
-                    SmartDashboard.putBoolean("Recording Data", true);
-                    startTime = System.currentTimeMillis();
-                    iteration++;
-                    file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,G2Angle,G2Rate,AccelX,AccelY,AccelZ,Phase" +
-                            ",RampTimer,Power\n");
-                } else SmartDashboard.putBoolean("Recording Data", false);
-                dataPressed = true;
-            }
-        } else dataPressed = false;
-
-        if(!loggingData) return;
-
-        if(recordingTimer.tick()) {
-            file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-            StringBuilder toWrite = new StringBuilder().append(System.currentTimeMillis() - startTime).append(",");
-            toWrite.append(accelerometerSubsystem.getAngle()).append(",").append(accelerometerSubsystem.getCurrentRate()).append(",");
-            toWrite.append(accelerometerSubsystem.getX()).append(",");
-            toWrite.append(accelerometerSubsystem.getY()).append(",");
-            toWrite.append(accelerometerSubsystem.getZ()).append(",");
-            toWrite.append(BalanceV3.currentPhase).append(",");
-            toWrite.append(drivingSubsystem.currentPower).append("\n");
-            FileManager.appendFile(file, toWrite.toString());
-        }
     }
 }

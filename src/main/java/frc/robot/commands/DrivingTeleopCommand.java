@@ -50,12 +50,21 @@ public class DrivingTeleopCommand extends CommandBase {
     }
 
     private SimpleToggle gripperToggle = new SimpleToggle();
+    private SimpleToggle shortArm = new SimpleToggle();
+    private SimpleToggle longArm = new SimpleToggle();
+    private boolean sent;
 
     @Override
     public void initialize() {
         balanceV3 = new BalanceV3();
         accelerometerSubsystem.calibrate();
         gripperToggle = new SimpleToggle();
+        shortArm = new SimpleToggle();
+        longArm = new SimpleToggle();
+        doubleSolonoidSubsystem.gripper.close();
+        doubleSolonoidSubsystem.shortArm.close();
+        doubleSolonoidSubsystem.longArm.close();
+        sent = false;
     }
 
     public enum ArmPosition {
@@ -96,6 +105,17 @@ public class DrivingTeleopCommand extends CommandBase {
                 doubleSolonoidSubsystem.longArm.open();
                 doubleSolonoidSubsystem.shortArm.open();
             }
+
+/*            if(shortArm.update(gamepad.getRawButton(1))) {
+                 doubleSolonoidSubsystem.shortArm.close();
+            } else {
+                doubleSolonoidSubsystem.shortArm.open();
+            }
+            if(longArm.update(gamepad.getRawButton(4))) {
+                doubleSolonoidSubsystem.longArm.close();
+            } else {
+                doubleSolonoidSubsystem.longArm.open();
+            }*/
 
 
             if(gripperToggle.update(gamepad.getRawButton(6))) {

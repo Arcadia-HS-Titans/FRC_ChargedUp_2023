@@ -22,6 +22,10 @@ public class DoubleSolenoidSubsystem extends SubsystemBase {
             status = true;
             part.set(DoubleSolenoid.Value.kForward);
         }
+        public void turnOff() {
+            status=  false;
+            part.set(DoubleSolenoid.Value.kOff);
+        }
     }
 
     public SolenoidStatus shortArm;
@@ -30,8 +34,11 @@ public class DoubleSolenoidSubsystem extends SubsystemBase {
 
     public DoubleSolenoidSubsystem() {
         longArm = new SolenoidStatus(5,4);
-        shortArm = new SolenoidStatus(6,7);
+        shortArm = new SolenoidStatus(7,6);
         gripper = new SolenoidStatus(2,3);
+        longArm.turnOff();
+        shortArm.turnOff();
+        gripper.turnOff();
     }
 
     @Override
