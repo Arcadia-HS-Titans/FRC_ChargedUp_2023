@@ -63,7 +63,8 @@ public class RobotContainer {
                 drivingSubsystem, usSubsystem, compressorSubsystem, winchSubsystem, joystick, gamepad);
         this.autoCommand = new AutoCommand(accelerometerSubsystem, doubleSolenoidSubsystem,
                 drivingSubsystem, usSubsystem, compressorSubsystem, joystick);
-        this.autoCommunityCommand = new AutoCommunityCommand(drivingSubsystem, joystick);
+        this.autoCommunityCommand = new AutoCommunityCommand(drivingSubsystem, joystick, doubleSolenoidSubsystem,
+                compressorSubsystem);
 
         // Add commands to the autonomous command chooser
         //m_chooser.setDefaultOption("No Ramp Auto", teleopCommand); // TODO: Actual option

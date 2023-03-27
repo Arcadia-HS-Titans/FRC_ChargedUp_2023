@@ -13,11 +13,27 @@ public class CompressorSubsystem extends SubsystemBase {
         this.compressor = new Compressor(PneumaticsModuleType.CTREPCM);
     }
 
+    private boolean compressorEnabled = true;
+
+    public void disableCompressor() {
+        compressorEnabled = false;
+    }
+
+    public void enableCompressor() {
+        compressorEnabled = true;
+    }
+
     @Override
     public void periodic() {
-        if(!compressor.getPressureSwitchValue()) {
+        if(compressor.getPressureSwitchValue()) {
+            compressorEnabled = false;
+        }
+        if(compressorEnabled) {
             SmartDashboard.putBoolean("Compressor", true);
             compressor.enableDigital(); // Only a specific REV motor can use analog w/ min and maxes
-        } else SmartDashboard.putBoolean("Compressor", false);
+        } else {
+            SmartDashboard.putBoolean("Compressor", false);
+            compressor.disable();
+        }
     }
 }

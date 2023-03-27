@@ -13,59 +13,44 @@ public class AutoCommunityCommand extends CommandBase {
 
     public DrivingSubsystem drivingSubsystem;
     public Joystick joystick;
+    private DoubleSolenoidSubsystem doubleSolenoidSubsystem;
+    private CompressorSubsystem compressorSubsystem;
 
-    public AutoCommunityCommand(DrivingSubsystem drivingSubsystem, Joystick joystick) {
+    public AutoCommunityCommand(DrivingSubsystem drivingSubsystem, Joystick joystick,
+                                DoubleSolenoidSubsystem doubleSolenoidSubsystem, CompressorSubsystem compressorSubsystem) {
         this.drivingSubsystem = drivingSubsystem;
+        this.doubleSolenoidSubsystem = doubleSolenoidSubsystem;
+        this.compressorSubsystem = compressorSubsystem;
         this.addRequirements(drivingSubsystem);
+        this.addRequirements(doubleSolenoidSubsystem);
+        this.addRequirements(compressorSubsystem);
         this.joystick = joystick;
     }
 
-    private SimpleCounter counter = new SimpleCounter(175, SimpleCounter.Behavior.ONCE);
+    private SimpleCounter counter;
+    private SimpleCounter scoreOnce;
     @Override
     public void execute() {
+        compressorSubsystem.enableCompressor();
+        if(!scoreOnce.tick()) {
+            if(scoreOnce.time < 100) {
+                doubleSolenoidSubsystem.shortArm.open();
+            } else {
+                doubleSolenoidSubsystem.shortArm.close();
+            }
+            drivingSubsystem.arcadeDrive(0, 0);
+            return;
+        }
+
         if(!counter.tick()) {
-            drivingSubsystem.arcadeDrive(.65, 0);
+            drivingSubsystem.arcadeDrive(-.65, 0);
         } else drivingSubsystem.arcadeDrive(0,0);
-        recordGyros();
     }
 
     @Override
     public void initialize() {
-        counter = new SimpleCounter(100, SimpleCounter.Behavior.ONCE);
+        counter = new SimpleCounter(150, SimpleCounter.Behavior.ONCE);
+        scoreOnce = new SimpleCounter(150, SimpleCounter.Behavior.ONCE);
         super.initialize();
-    }
-
-    private final SimpleCounter recordingTimer = new SimpleCounter(0, SimpleCounter.Behavior.INFINITE);
-    private long startTime = System.currentTimeMillis();
-    private int iteration = 0;
-    private boolean loggingData = false;
-    private boolean dataPressed = false;
-
-    public void recordGyros() {
-        File file;
-        if(joystick.getRawButton(1)) {
-            if(!dataPressed) {
-                loggingData = !loggingData;
-                if(loggingData) {
-                    SmartDashboard.putBoolean("Recording Data", true);
-                    startTime = System.currentTimeMillis();
-                    iteration++;
-                    file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-                    FileManager.writeFile(file, "Time,G1Angle,G1Rate,AccelX,AccelY,AccelZ,Phase" +
-                            ",Power,JoystickX,JoystickY\n");
-                } else SmartDashboard.putBoolean("Recording Data", false);
-                dataPressed = true;
-            }
-        } else dataPressed = false;
-
-        if(!loggingData) return;
-
-        if(recordingTimer.tick()) {
-            file = new File("/home/lvuser/GyroData" + iteration + ".csv");
-            StringBuilder toWrite = new StringBuilder().append(System.currentTimeMillis() - startTime).append(",");
-            toWrite.append(joystick.getX()).append(",");
-            toWrite.append(joystick.getY()).append(",").append("\n");
-            FileManager.appendFile(file, toWrite.toString());
-        }
     }
 }

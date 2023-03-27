@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -64,7 +65,9 @@ public class DrivingTeleopCommand extends CommandBase {
         doubleSolonoidSubsystem.gripper.close();
         doubleSolonoidSubsystem.shortArm.close();
         doubleSolonoidSubsystem.longArm.close();
+        compressorSubsystem.enableCompressor();
         sent = false;
+        compressorTimer = new SimpleCounter(50*90, SimpleCounter.Behavior.ONCE);
     }
 
     public enum ArmPosition {
@@ -74,6 +77,7 @@ public class DrivingTeleopCommand extends CommandBase {
     }
 
     private ArmPosition currentPos = ArmPosition.LOW;
+    private SimpleCounter compressorTimer;
 
     @Override
     public void execute() {
@@ -123,7 +127,13 @@ public class DrivingTeleopCommand extends CommandBase {
             } else doubleSolonoidSubsystem.gripper.close();
 
             winchSubsystem.setMotor(gamepad.getRawAxis(1));
-            drivingSubsystem.arcadeDrive(-joystick.getY(), joystick.getZ() * .87);
+            double[] power = new double[]{-joystick.getY(), joystick.getZ() * .87};
+            drivingSubsystem.arcadeDrive(power[0], power[1]);
+            SmartDashboard.putNumber("Joystick Y", power[0]);
+            SmartDashboard.putNumber("Joystick Z", power[1]);
+            if(compressorTimer.tick()) {
+                compressorSubsystem.disableCompressor();
+            }
         }
         recordGyros();
     }

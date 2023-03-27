@@ -84,9 +84,9 @@ public class AutoCommand extends CommandBase {
             }
             drivingSubsystem.arcadeDrive(.6, 0);
             //if(usSystem.getReading() < 12) {
-                drivingSubsystem.arcadeDrive(0, 0);
-                subPhase.tick();
-           // }
+            drivingSubsystem.arcadeDrive(0, 0);
+            subPhase.tick();
+            // }
         }
 
         if(subPhase.time == 3) {
@@ -103,6 +103,7 @@ public class AutoCommand extends CommandBase {
     public void execute() {
         // Called every 20 ms
         //gettingOverRamp();
+        compressorSubsystem.enableCompressor();
 
         if(!pushObject.tick()) {
             if(pushObject.time < 100)
@@ -119,5 +120,39 @@ public class AutoCommand extends CommandBase {
             accelerometerSubsystem.assignConst();
         }
         balanceV3.balanceOnRamp(accelerometerSubsystem, drivingSubsystem, false);
+        recordGyros();
+    }
+
+    private final SimpleCounter recordingTimer = new SimpleCounter(0, SimpleCounter.Behavior.INFINITE);
+    private long startTime = System.currentTimeMillis();
+    private int iteration = 0;
+    private boolean loggingData = false;
+    private boolean dataPressed = false;
+    public void recordGyros() {
+        File file;
+        if(!dataPressed) {
+                SmartDashboard.putBoolean("Recording Data", true);
+                startTime = System.currentTimeMillis();
+                iteration++;
+                file = new File("/home/lvuser/GyroData" + iteration + ".csv");
+                FileManager.writeFile(file, "Time,G1Angle,G1Rate,AccelX,AccelY,AccelZ,Phase" +
+                        ",Power,JoystickX,JoystickY\n");
+            dataPressed = true;
+        }
+
+        if(recordingTimer.tick()) {
+            file = new File("/home/lvuser/GyroData" + iteration + ".csv");
+            StringBuilder toWrite = new StringBuilder().append(System.currentTimeMillis() - startTime).append(",");
+            toWrite.append(accelerometerSubsystem.getAngle()).append(",")
+                    .append(accelerometerSubsystem.getCurrentRate()).append(",");
+            toWrite.append(accelerometerSubsystem.getX()).append(",");
+            toWrite.append(accelerometerSubsystem.getY()).append(",");
+            toWrite.append(accelerometerSubsystem.getZ()).append(",");
+            toWrite.append(BalanceV3.currentPhase).append(",");
+            toWrite.append(drivingSubsystem.currentPower).append(",");
+            toWrite.append(joystick.getZ()).append(",");
+            toWrite.append(joystick.getY()).append(",").append("\n");
+            FileManager.appendFile(file, toWrite.toString());
+        }
     }
 }
